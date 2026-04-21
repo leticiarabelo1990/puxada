@@ -112,6 +112,11 @@ function renderApiCards() {
 window.selectApi = function (apiKey) {
     if (apiKey === currentApi || isLoading) return;
     currentApi = apiKey;
+
+    // Zera os campos ao trocar
+    queryInput.value = '';
+    clearInputBtn.style.display = 'none';
+
     renderApiCards();
     updateUIState(apiKey);
     resetResults();
@@ -164,7 +169,14 @@ async function performSearch() {
 
     const api = API_ENDPOINTS[currentApi];
     const endpointFile = api.endpoint.split('/').pop();
-    const url = `/api/proxy?path=${endpointFile}&${api.paramName}=${encodeURIComponent(query)}`;
+
+    let finalQuery = query;
+    // Se for CPF ou Telefone, remove todos os não-números silenciosamente
+    if (currentApi === 'cpf' || currentApi === 'tel' || currentApi === 'rg') {
+        finalQuery = finalQuery.replace(/\D/g, '');
+    }
+
+    const url = `/api/proxy?path=${endpointFile}&${api.paramName}=${encodeURIComponent(finalQuery)}`;
 
     setLoading(true);
     resetResults();
