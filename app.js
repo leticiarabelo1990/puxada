@@ -265,17 +265,30 @@ function renderResults(data) {
 // Helpers para extrair info (Como a API retorna dados flexíveis)
 function extractPrimaryTitle(obj) {
     if (!obj || typeof obj !== 'object') return 'Dado Inválido';
-    return obj.NOME || obj.nome || obj.NOME_PESSOA || obj.RAZAO_SOCIAL || obj.TITLE || obj.CPF || obj.cpf || '- - -';
+    const source = obj.DADOS || obj;
+    return source.NOME || source.nome || source.NOME_PESSOA || source.RAZAO_SOCIAL || source.TITLE || source.CPF || source.cpf || '- - -';
 }
+
 function extractSecondaryInfo(obj, order) {
+    const source = obj.DADOS || obj;
+
+    // Auxiliar prático para telefones formatados se existirem
+    let firstPhone = '';
+    if (obj.TELEFONE && Array.isArray(obj.TELEFONE) && obj.TELEFONE.length > 0) {
+        firstPhone = `(${obj.TELEFONE[0].DDD || ''}) ${obj.TELEFONE[0].TELEFONE || ''}`;
+    } else if (source.TELEFONE || source.telefone) {
+        firstPhone = source.TELEFONE || source.telefone;
+    }
+
     if (order === 1) {
-        if (obj.CPF || obj.cpf) return `CPF: ${obj.CPF || obj.cpf}`;
-        if (obj.TELEFONE || obj.telefone) return `Tel: ${obj.TELEFONE || obj.telefone}`;
-        if (obj.NASCIMENTO || obj.dt_nascimento) return `Nasc: ${obj.NASCIMENTO || obj.dt_nascimento}`;
+        if (source.CPF || source.cpf) return `<span class="text-brand-500 font-medium">CPF:</span> ${source.CPF || source.cpf}`;
+        if (firstPhone) return `<span class="text-brand-500 font-medium">Tel:</span> ${firstPhone}`;
+        if (source.NASCIMENTO || source.NASC || source.dt_nascimento) return `<span class="text-brand-500 font-medium">Nasc:</span> ${source.NASCIMENTO || source.NASC || source.dt_nascimento}`;
     }
     if (order === 2) {
-        if (obj.NOME_MAE || obj.mae) return `Mãe: ${obj.NOME_MAE || obj.mae}`;
-        if (obj.RG || obj.rg) return `RG: ${obj.RG || obj.rg}`;
+        if (source.NOME_MAE || source.mae) return `<span class="text-brand-500 font-medium">Mãe:</span> <span class="capitalize">${(source.NOME_MAE || source.mae).toLowerCase()}</span>`;
+        if (source.RG || source.rg) return `<span class="text-brand-500 font-medium">RG:</span> ${source.RG || source.rg}`;
+        if (firstPhone) return `<span class="text-brand-500 font-medium">Tel:</span> ${firstPhone}`;
     }
     return null;
 }
@@ -287,7 +300,9 @@ window.openDetailsModal = function (encodedJson, indexId) {
 
     modalTitle.textContent = title;
     modalSubtitle.textContent = `DOSSIÊ #00${indexId} • STATUS: VERIFICADO`;
-    modalContent.innerHTML = syntaxHighlightJson(data);
+
+    // Gerar visual atraente ao invés do JSON cru
+    modalContent.innerHTML = buildVisualDossier(data);
 
     fullDataModal.classList.remove('hidden');
     // Animate in
@@ -308,29 +323,136 @@ window.closeDetailsModal = function () {
     }, 300);
 }
 
-// Pretty print JSON view
-function syntaxHighlightJson(json) {
-    if (typeof json != 'string') {
-        json = JSON.stringify(json, null, 4);
+// Build Visual Dossier (HTML agradável)
+function buildVisualDossier(json) {
+    let html = '<div class="space-y-6">';
+
+    // DADOS PRINCIPAIS
+    if (json.DADOS) {
+        html += renderSection('Informações Pessoais', 'fa-id-card', json.DADOS);
+    } else if (Object.keys(json).length > 0 && !json.DADOS) {
+        // Se a API retornar formato plano sem seções
+        html += renderSection('Detalhes Principais', 'fa-asterisk', json);
+        return html + '</div>';
     }
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        let cls = 'text-blue-400';
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                cls = 'text-purple-400 font-semibold'; // key
-            } else {
-                cls = 'text-green-400'; // string
-            }
-        } else if (/true|false/.test(match)) {
-            cls = 'text-yellow-400'; // boolean
-        } else if (/null/.test(match)) {
-            cls = 'text-slate-500'; // null
-        } else {
-            cls = 'text-orange-400'; // number
-        }
-        return '<span class="' + cls + '">' + match + '</span>';
+
+    // TELEFONES
+    if (json.TELEFONE && Array.isArray(json.TELEFONE)) {
+        html += renderListSection('Telefones Encontrados', 'fa-phone', json.TELEFONE, (t) => {
+            return `
+                <div class="flex flex-col">
+                   <span class="text-white font-bold text-lg">(${t.DDD || '-'}) ${t.TELEFONE || '-'}</span>
+                   <span class="text-slate-400 text-xs">Atualizado em: ${formatDate(t.DT_INCLUSAO || t.DT_INFORMACAO)}</span>
+                </div>
+            `;
+        });
+    }
+
+    // ENDERECOS
+    if (json.ENDERECO && Array.isArray(json.ENDERECO)) {
+        html += renderListSection('Endereços Vinculados', 'fa-map-marker-alt', json.ENDERECO, (e) => {
+            return `
+                <div class="flex flex-col gap-1">
+                   <span class="text-white text-sm">${e.TIPO_LOGRADOURO || ''} ${e.LOGRADOURO || ''}, ${e.NUMERO || 'S/N'} ${e.COMPLEMENTO ? '(' + e.COMPLEMENTO + ')' : ''}</span>
+                   <span class="text-slate-400 text-xs">${e.BAIRRO || ''} • ${e.CIDADE || ''} - ${e.UF || ''} • CEP: ${e.CEP || ''}</span>
+                </div>
+            `;
+        });
+    }
+
+    // EMAILS
+    if (json.EMAIL && Array.isArray(json.EMAIL)) {
+        html += renderListSection('E-mails Cadastrados', 'fa-envelope', json.EMAIL, (e) => {
+            return `<span class="text-brand-400 font-medium text-sm break-all">${e.EMAIL || ''}</span>`;
+        });
+    }
+
+    // VEICULOS (Caso haja dependendo da API)
+    if (json.VEICULO && Array.isArray(json.VEICULO)) {
+        html += renderListSection('Veículos', 'fa-car', json.VEICULO, (v) => {
+            return `<span class="text-white text-sm">PLACA: <strong class="text-brand-400">${v.PLACA || ''}</strong> • ${v.MODELO || ''} ${v.ANO_FABRICACAO || ''}</span>`;
+        });
+    }
+
+    // SOCIEDADES / EMPRESAS
+    if (json.SOCIEDADE && Array.isArray(json.SOCIEDADE)) {
+        html += renderListSection('Participações Societárias', 'fa-building', json.SOCIEDADE, (s) => {
+            return `
+               <div class="flex flex-col gap-1">
+                  <span class="text-white text-sm font-semibold">${s.RAZAO_SOCIAL || ''}</span>
+                  <span class="text-slate-400 text-xs">CNPJ: ${s.CNPJ || ''} • Participação: ${s.PARTICIPACAO || ''}%</span>
+               </div>
+            `;
+        });
+    }
+
+    html += '</div>';
+    return html;
+}
+
+function renderSection(title, icon, dataObj) {
+    if (!dataObj || Object.keys(dataObj).length === 0) return '';
+
+    let html = `
+        <div class="bg-[#151a28] rounded-xl border border-white/5 overflow-hidden">
+            <div class="bg-black/20 px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                <i class="fas ${icon} text-brand-500"></i>
+                <h4 class="text-white font-bold tracking-wide">${title}</h4>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+    `;
+
+    for (const [key, value] of Object.entries(dataObj)) {
+        if (value === '' || value === null || typeof value === 'object') continue;
+
+        let label = key.replace(/_/g, ' ');
+        // Mapear Siglas Feias
+        if (key === 'NASC') label = 'DATA DE NASCIMENTO';
+        else if (key === 'NOME_MAE') label = 'NOME DA MÃE';
+        else if (key === 'NOME_PAI') label = 'NOME DO PAI';
+        else if (key === 'ESTCIV') label = 'ESTADO CIVIL';
+        else if (key === 'DT_SIT_CAD') label = 'DATA SIT. CADASTRAL';
+
+        html += `
+            <div class="flex flex-col">
+                <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">${label}</span>
+                <span class="text-slate-200 text-sm font-medium uppercase break-words">${value}</span>
+            </div>
+        `;
+    }
+
+    html += `</div></div>`;
+    return html;
+}
+
+function renderListSection(title, icon, items, renderItem) {
+    if (!items || items.length === 0) return '';
+
+    let html = `
+        <div class="bg-[#151a28] rounded-xl border border-white/5 overflow-hidden">
+            <div class="bg-black/20 px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                <i class="fas ${icon} text-purple-500"></i>
+                <h4 class="text-white font-bold tracking-wide">${title} <span class="bg-white/10 px-2 py-0.5 rounded-full text-[10px] ml-2">${items.length}</span></h4>
+            </div>
+            <div class="divide-y divide-white/5">
+    `;
+
+    items.forEach((item, idx) => {
+        html += `<div class="p-4 hover:bg-white/5 transition-colors">${renderItem(item)}</div>`;
     });
+
+    html += `</div></div>`;
+    return html;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'Desconhecida';
+    // Remove tempo extra se houver "2008-05-13 00:00:00" -> "13/05/2008"
+    try {
+        const parts = dateStr.split(' ')[0].split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return dateStr;
+    } catch { return dateStr; }
 }
 
 function setLoading(loading) {
