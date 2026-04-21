@@ -1,0 +1,49 @@
+/* Tailwind CSS via CDN */
+@import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+
+/* Estilos customizados */
+body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Transições suaves */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+/* Estilo para cards de API ativos */
+.api-card.active {
+    @apply border-blue-500 bg-blue-50 ring-2 ring-blue-200;
+}
+
+/* Animação do spinner */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Estilo para scroll em resultados */
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Ajustes para mobile */
+@media (max-width: 640px) {
+    .grid-cols-7 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Badge de contagem de resultados */
+.result-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800;
+}
