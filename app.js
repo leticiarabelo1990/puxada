@@ -327,25 +327,43 @@ window.closeDetailsModal = function () {
 function buildVisualDossier(json) {
     let html = '<div class="space-y-6">';
 
-    // DADOS PRINCIPAIS
-    if (json.DADOS) {
-        html += renderSection('Informações Pessoais', 'fa-id-card', json.DADOS);
-    } else if (Object.keys(json).length > 0 && !json.DADOS) {
-        // Se a API retornar formato plano sem seções
-        html += renderSection('Detalhes Principais', 'fa-asterisk', json);
-        return html + '</div>';
-    }
+    // TELEFONES EM DESTAQUE (NO TOPO)
+    if (json.TELEFONE && Array.isArray(json.TELEFONE) && json.TELEFONE.length > 0) {
+        html += `
+            <div class="bg-brand-900/30 rounded-xl border border-brand-500/40 overflow-hidden shadow-[0_0_20px_rgba(14,165,233,0.15)]">
+                <div class="bg-brand-500/20 px-4 py-3 flex items-center gap-3 border-b border-brand-500/30">
+                    <div class="w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center animate-pulse">
+                        <i class="fas fa-phone-volume text-brand-400"></i>
+                    </div>
+                    <h4 class="text-brand-300 font-bold tracking-wide uppercase">Contatos em Destaque</h4>
+                    <span class="bg-brand-500 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold ml-auto">${json.TELEFONE.length}</span>
+                </div>
+                <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        `;
 
-    // TELEFONES
-    if (json.TELEFONE && Array.isArray(json.TELEFONE)) {
-        html += renderListSection('Telefones Encontrados', 'fa-phone', json.TELEFONE, (t) => {
-            return `
-                <div class="flex flex-col">
-                   <span class="text-white font-bold text-lg">(${t.DDD || '-'}) ${t.TELEFONE || '-'}</span>
-                   <span class="text-slate-400 text-xs">Atualizado em: ${formatDate(t.DT_INCLUSAO || t.DT_INFORMACAO)}</span>
+        json.TELEFONE.forEach(t => {
+            html += `
+                <div class="flex items-center gap-3 bg-[#0a0f18]/80 p-3 rounded-lg border border-white/5 hover:border-brand-500/30 transition-colors">
+                    <div class="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-mobile-alt text-brand-400 text-lg"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-white font-bold text-xl tracking-wider select-all">(${t.DDD || '-'}) ${t.TELEFONE || '-'}</span>
+                        <span class="text-brand-500/70 text-xs font-semibold uppercase">Atualizado: ${formatDate(t.DT_INCLUSAO || t.DT_INFORMACAO)}</span>
+                    </div>
                 </div>
             `;
         });
+
+        html += `</div></div>`;
+    }
+
+    // DADOS PRINCIPAIS
+    if (json.DADOS) {
+        html += renderSection('Informações Pessoais', 'fa-id-card', json.DADOS);
+    } else if (Object.keys(json).length > 0 && !json.DADOS && !json.TELEFONE) {
+        html += renderSection('Detalhes Principais', 'fa-asterisk', json);
+        return html + '</div>';
     }
 
     // ENDERECOS
