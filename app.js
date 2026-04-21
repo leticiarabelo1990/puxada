@@ -1,37 +1,36 @@
 // Configuração das APIs disponíveis
-// Configuração das APIs disponíveis (agora usando proxy via Vercel)
 const API_ENDPOINTS = {
     cpf: {
         name: 'CPF',
         icon: 'fa-id-card',
-        endpoint: '/api/busca_cpf.php',        // ← Caminho relativo
+        endpoint: '/api/busca_cpf.php',
         paramName: 'cpf',
         placeholder: 'Ex: 12345678901',
-        hint: 'Digite o CPF (somente números)'
+        hint: 'Digite apenas números (11 dígitos)'
     },
     mae: {
         name: 'Mãe',
         icon: 'fa-female',
         endpoint: '/api/busca_mae.php',
         paramName: 'mae',
-        placeholder: 'Ex: MARIA',
-        hint: 'Digite o nome exato da mãe'
+        placeholder: 'Ex: MARIA DA SILVA',
+        hint: 'Digite o nome exato'
     },
     nome: {
         name: 'Nome',
         icon: 'fa-user',
         endpoint: '/api/busca_nome.php',
         paramName: 'nome',
-        placeholder: 'Ex: JOAO',
-        hint: 'Digite o nome exato'
+        placeholder: 'Ex: JOAO SILVA',
+        hint: 'Digite o nome exato ou parcial'
     },
     pai: {
         name: 'Pai',
         icon: 'fa-male',
         endpoint: '/api/busca_pai.php',
         paramName: 'pai',
-        placeholder: 'Ex: JOSE',
-        hint: 'Digite o nome do pai (mínimo 3 letras)'
+        placeholder: 'Ex: JOSE DA SILVA',
+        hint: 'Mínimo 3 letras informadas'
     },
     rg: {
         name: 'RG',
@@ -39,63 +38,70 @@ const API_ENDPOINTS = {
         endpoint: '/api/busca_rg.php',
         paramName: 'rg',
         placeholder: 'Ex: 1234567',
-        hint: 'Digite o número do RG'
+        hint: 'Digite apenas números'
     },
     tel: {
         name: 'Telefone',
-        icon: 'fa-phone',
+        icon: 'fa-phone-volume',
         endpoint: '/api/busca_tel.php',
         paramName: 'tel',
         placeholder: 'Ex: 11987654321',
-        hint: 'Digite DDD + número'
+        hint: 'DDD + Número'
     },
     titulo: {
-        name: 'Título',
+        name: 'Título Eleitor',
         icon: 'fa-vote-yea',
         endpoint: '/api/busca_titulo.php',
         paramName: 'titulo',
         placeholder: 'Ex: 123456789012',
-        hint: 'Digite o número do título de eleitor'
+        hint: 'Número completo do título'
     }
 };
 
-// Estado da aplicação
-let currentApi = 'cpf'; // API selecionada
+// Estado
+let currentApi = 'cpf';
 let isLoading = false;
-let lastResult = null;
+let toastTimeout;
 
-// Elementos do DOM
+// DOM
 const apiSelector = document.getElementById('apiSelector');
 const queryInput = document.getElementById('queryInput');
 const searchBtn = document.getElementById('searchBtn');
 const clearInputBtn = document.getElementById('clearInputBtn');
 const inputLabel = document.getElementById('inputLabel');
 const apiHint = document.getElementById('apiHint');
-const resultContainer = document.getElementById('resultContainer');
+
+// Resultados
 const resultCount = document.getElementById('resultCount');
+const resultPlaceholder = document.getElementById('resultPlaceholder');
+const resultGrid = document.getElementById('resultGrid');
 
-// Toast
-let toastTimeout;
-const toastEl = document.getElementById('toast');
-const toastIcon = document.getElementById('toastIcon');
-const toastMessage = document.getElementById('toastMessage');
+// Modal
+const fullDataModal = document.getElementById('fullDataModal');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalDrawer = document.getElementById('modalDrawer');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const modalTitle = document.getElementById('modalTitle');
+const modalSubtitle = document.getElementById('modalSubtitle');
+const modalContent = document.getElementById('modalContent');
 
-// Inicialização
+// Init
 function init() {
     renderApiCards();
     setupEventListeners();
-    updateUIForApi(currentApi);
+    updateUIState(currentApi);
 }
 
-// Renderiza os cards de seleção de API
 function renderApiCards() {
     let html = '';
     for (const [key, api] of Object.entries(API_ENDPOINTS)) {
+        const isActive = key === currentApi;
         html += `
-            <div class="api-card bg-white border rounded-lg p-3 cursor-pointer transition-all hover:shadow-md ${key === currentApi ? 'active' : ''}" data-api="${key}">
-                <div class="flex flex-col items-center text-center">
-                    <i class="fas ${api.icon} text-2xl mb-2 ${key === currentApi ? 'text-blue-600' : 'text-gray-600'}"></i>
-                    <span class="text-sm font-medium ${key === currentApi ? 'text-blue-700' : 'text-gray-700'}">${api.name}</span>
+            <div class="group relative cursor-pointer" onclick="selectApi('${key}')">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-500 to-purple-600 rounded-xl blur opacity-0 ${isActive ? 'opacity-50' : 'group-hover:opacity-30'} transition duration-300"></div>
+                <div class="relative flex flex-col items-center justify-center p-4 rounded-xl border ${isActive ? 'bg-brand-900/40 border-brand-500/50' : 'bg-darkcard border-white/5'} backdrop-blur-md transition-all duration-300 h-full">
+                    <i class="fas ${api.icon} text-2xl mb-2 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-brand-400'}"></i>
+                    <span class="text-xs font-semibold text-center tracking-wide ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'}">${api.name}</span>
                 </div>
             </div>
         `;
@@ -103,76 +109,55 @@ function renderApiCards() {
     apiSelector.innerHTML = html;
 }
 
-// Configura os event listeners
+window.selectApi = function (apiKey) {
+    if (apiKey === currentApi || isLoading) return;
+    currentApi = apiKey;
+    renderApiCards();
+    updateUIState(apiKey);
+    resetResults();
+};
+
 function setupEventListeners() {
-    // Seleção de API
-    apiSelector.addEventListener('click', (e) => {
-        const card = e.target.closest('.api-card');
-        if (!card) return;
-
-        const apiKey = card.dataset.api;
-        if (apiKey) {
-            currentApi = apiKey;
-            renderApiCards();
-            updateUIForApi(apiKey);
-            clearResults();
-        }
-    });
-
-    // Botão de busca
     searchBtn.addEventListener('click', performSearch);
 
-    // Enter no input
     queryInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            performSearch();
-        }
+        if (e.key === 'Enter') performSearch();
     });
 
-    // Monitorar input para mostrar/ocultar botão limpar
     queryInput.addEventListener('input', () => {
         clearInputBtn.style.display = queryInput.value ? 'flex' : 'none';
     });
 
-    // Limpar input
-    clearInputBtn.addEventListener('click', clearInput);
+    clearInputBtn.addEventListener('click', () => {
+        queryInput.value = '';
+        clearInputBtn.style.display = 'none';
+        queryInput.focus();
+    });
+
+    // Modal
+    closeModalBtn.addEventListener('click', closeDetailsModal);
+    modalBackdrop.addEventListener('click', closeDetailsModal);
 }
 
-// Atualiza a UI com base na API selecionada
-function updateUIForApi(apiKey) {
+function updateUIState(apiKey) {
     const api = API_ENDPOINTS[apiKey];
-    inputLabel.textContent = `${api.name}:`;
+    inputLabel.innerHTML = `<i class="fas ${api.icon} mr-2 text-brand-500"></i> ${api.name}`;
     queryInput.placeholder = api.placeholder;
-    apiHint.textContent = api.hint;
-    document.title = `API Brasil Pro - ${api.name}`;
+    apiHint.textContent = "DICA: " + api.hint;
 }
 
-// Limpa o campo de input
-function clearInput() {
-    queryInput.value = '';
-    clearInputBtn.style.display = 'none';
-    queryInput.focus();
+function resetResults() {
+    resultGrid.classList.add('hidden');
+    resultPlaceholder.classList.remove('hidden');
+    resultCount.classList.add('hidden');
+    resultGrid.innerHTML = '';
 }
 
-// Limpa a área de resultados
-function clearResults() {
-    resultContainer.innerHTML = `
-        <div class="text-center py-12 text-gray-400">
-            <i class="fas fa-database text-5xl mb-4"></i>
-            <p class="text-lg">Nenhuma consulta realizada.</p>
-            <p class="text-sm">Selecione uma API e faça uma busca.</p>
-        </div>
-    `;
-    resultCount.textContent = '';
-    lastResult = null;
-}
-
-// Realiza a busca na API
 async function performSearch() {
     const query = queryInput.value.trim();
 
     if (!query) {
-        showToast('Por favor, digite um valor para consulta.', 'warning');
+        showToast('Parâmetro vazio. Verifique os dados.', 'warning');
         queryInput.focus();
         return;
     }
@@ -181,152 +166,212 @@ async function performSearch() {
     const endpointFile = api.endpoint.split('/').pop();
     const url = `/api/proxy?path=${endpointFile}&${api.paramName}=${encodeURIComponent(query)}`;
 
-    // Mostrar loading
     setLoading(true);
+    resetResults();
 
     try {
         const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
+            throw new Error(`Servidor inacessível. HTTP ${response.status}`);
         }
 
         const data = await response.json();
-        lastResult = data;
-        displayResult(data);
 
-        // Contar resultados
-        let count = 0;
-        if (data.RESULTADOS && Array.isArray(data.RESULTADOS)) {
-            count = data.RESULTADOS.length;
-        } else if (data.DADOS) {
-            count = 1;
-        } else if (!data.erro && Object.keys(data).length > 1) {
-            count = 1;
+        if (data.erro) {
+            showToast(data.erro, 'error');
+            return;
         }
 
-        resultCount.textContent = count > 0 ? `${count} resultado(s)` : 'Nenhum resultado';
+        renderResults(data);
 
     } catch (error) {
-        console.error('Erro na consulta:', error);
-        showToast('Erro ao realizar a consulta. Verifique sua conexão.', 'error');
-        resultContainer.innerHTML = `
-            <div class="text-center py-12 text-red-400">
-                <i class="fas fa-exclamation-triangle text-5xl mb-4"></i>
-                <p class="text-lg">Erro na consulta</p>
-                <p class="text-sm">Não foi possível conectar ao servidor.</p>
-            </div>
-        `;
-        resultCount.textContent = '';
+        console.error('Erro geral:', error);
+        showToast('Falha na comunicação com o datalake.', 'error');
     } finally {
         setLoading(false);
     }
 }
 
-// Exibe o resultado formatado
-function displayResult(data) {
-    // Verificar se há erro na resposta
-    if (data.erro) {
-        resultContainer.innerHTML = `
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-                <div class="flex items-center">
-                    <i class="fas fa-exclamation-circle mr-2"></i>
-                    <span>${data.erro}</span>
+function renderResults(data) {
+    resultPlaceholder.classList.add('hidden');
+    resultGrid.classList.remove('hidden');
+
+    // Normalizar como Array
+    let items = [];
+    if (data.RESULTADOS && Array.isArray(data.RESULTADOS)) {
+        items = data.RESULTADOS;
+    } else if (data.DADOS) {
+        items = Array.isArray(data.DADOS) ? data.DADOS : [data.DADOS];
+    } else {
+        items = [data]; // Objeto único
+    }
+
+    if (items.length === 0) {
+        resultGrid.innerHTML = `
+            <div class="col-span-full py-16 flex flex-col items-center">
+                <i class="fas fa-ghost text-5xl text-slate-700 mb-4"></i>
+                <p class="text-slate-400 font-medium tracking-wide">NENHUM DADO ENCONTRADO</p>
+            </div>
+        `;
+        resultCount.classList.add('hidden');
+        return;
+    }
+
+    resultCount.textContent = `${items.length} ${items.length === 1 ? 'REGISTRO' : 'REGISTROS'}`;
+    resultCount.classList.remove('hidden');
+
+    let html = '';
+    items.forEach((item, idx) => {
+        // Extrair informações chaves baseado no tipo
+        const titleProp = extractPrimaryTitle(item);
+        const sub1 = extractSecondaryInfo(item, 1);
+        const sub2 = extractSecondaryInfo(item, 2);
+
+        // O item vai ser guardado no DOM via dataset ou em variável local para o modal
+        const jsonStr = encodeURIComponent(JSON.stringify(item));
+
+        html += `
+            <div class="group relative bg-[#0f1523] border border-white/5 rounded-xl overflow-hidden hover:border-brand-500/50 transition-all duration-300 shadow-lg hover:shadow-brand-900/20 transform hover:-translate-y-1">
+                <div class="absolute top-0 right-0 p-3">
+                    <span class="text-xs font-bold text-slate-600 bg-black/20 px-2 py-1 rounded-md">#${idx + 1}</span>
+                </div>
+                
+                <div class="p-6 border-b border-white/5">
+                    <div class="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center mb-4 border border-brand-500/20">
+                        <i class="fas ${API_ENDPOINTS[currentApi].icon} text-brand-400"></i>
+                    </div>
+                    
+                    <h4 class="text-lg font-bold text-white mb-1 truncate" title="${titleProp}">${titleProp}</h4>
+                    
+                    <div class="space-y-1 mt-3">
+                        ${sub1 ? `<div class="flex items-center text-sm text-slate-400"><i class="fas fa-chevron-right text-xs text-brand-600 mr-2"></i><span class="truncate">${sub1}</span></div>` : ''}
+                        ${sub2 ? `<div class="flex items-center text-sm text-slate-400"><i class="fas fa-chevron-right text-xs text-brand-600 mr-2"></i><span class="truncate">${sub2}</span></div>` : ''}
+                    </div>
+                </div>
+                
+                <div class="p-3 bg-black/20">
+                    <button class="w-full py-2.5 rounded-lg bg-white/5 hover:bg-brand-600 font-medium text-sm text-slate-300 hover:text-white transition-colors flex items-center justify-center" onclick="openDetailsModal('${jsonStr}', ${idx + 1})">
+                        <i class="fas fa-expand-alt mr-2"></i> VER DOSSIÊ
+                    </button>
                 </div>
             </div>
         `;
-        return;
-    }
+    });
 
-    // Se tiver array de RESULTADOS (como na API de telefone)
-    if (data.RESULTADOS && Array.isArray(data.RESULTADOS)) {
-        if (data.RESULTADOS.length === 0) {
-            resultContainer.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-search text-4xl mb-3"></i>
-                    <p>Nenhum resultado encontrado.</p>
-                </div>
-            `;
-            return;
-        }
-
-        let html = '<div class="space-y-4">';
-        data.RESULTADOS.forEach((item, index) => {
-            html += `
-                <div class="border rounded-lg p-4 bg-gray-50">
-                    <div class="flex items-center mb-2">
-                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Resultado ${index + 1}</span>
-                    </div>
-                    <pre class="text-sm text-gray-700 overflow-auto max-h-60">${JSON.stringify(item, null, 2)}</pre>
-                </div>
-            `;
-        });
-        html += '</div>';
-        resultContainer.innerHTML = html;
-        return;
-    }
-
-    // Para outros formatos (objeto único)
-    resultContainer.innerHTML = `
-        <div class="border rounded-lg p-4 bg-gray-50">
-            <pre class="text-sm text-gray-700 overflow-auto max-h-96">${JSON.stringify(data, null, 2)}</pre>
-        </div>
-    `;
+    resultGrid.innerHTML = html;
 }
 
-// Controla o estado de loading
+// Helpers para extrair info (Como a API retorna dados flexíveis)
+function extractPrimaryTitle(obj) {
+    if (!obj || typeof obj !== 'object') return 'Dado Inválido';
+    return obj.NOME || obj.nome || obj.NOME_PESSOA || obj.RAZAO_SOCIAL || obj.TITLE || obj.CPF || obj.cpf || '- - -';
+}
+function extractSecondaryInfo(obj, order) {
+    if (order === 1) {
+        if (obj.CPF || obj.cpf) return `CPF: ${obj.CPF || obj.cpf}`;
+        if (obj.TELEFONE || obj.telefone) return `Tel: ${obj.TELEFONE || obj.telefone}`;
+        if (obj.NASCIMENTO || obj.dt_nascimento) return `Nasc: ${obj.NASCIMENTO || obj.dt_nascimento}`;
+    }
+    if (order === 2) {
+        if (obj.NOME_MAE || obj.mae) return `Mãe: ${obj.NOME_MAE || obj.mae}`;
+        if (obj.RG || obj.rg) return `RG: ${obj.RG || obj.rg}`;
+    }
+    return null;
+}
+
+// Sistema de Modal
+window.openDetailsModal = function (encodedJson, indexId) {
+    const data = JSON.parse(decodeURIComponent(encodedJson));
+    const title = extractPrimaryTitle(data);
+
+    modalTitle.textContent = title;
+    modalSubtitle.textContent = `DOSSIÊ #00${indexId} • STATUS: VERIFICADO`;
+    modalContent.innerHTML = syntaxHighlightJson(data);
+
+    fullDataModal.classList.remove('hidden');
+    // Animate in
+    setTimeout(() => {
+        modalBackdrop.classList.remove('opacity-0');
+        modalDrawer.classList.remove('translate-x-full');
+    }, 10);
+    document.body.style.overflow = 'hidden';
+}
+
+window.closeDetailsModal = function () {
+    modalBackdrop.classList.add('opacity-0');
+    modalDrawer.classList.add('translate-x-full');
+
+    setTimeout(() => {
+        fullDataModal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }, 300);
+}
+
+// Pretty print JSON view
+function syntaxHighlightJson(json) {
+    if (typeof json != 'string') {
+        json = JSON.stringify(json, null, 4);
+    }
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        let cls = 'text-blue-400';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'text-purple-400 font-semibold'; // key
+            } else {
+                cls = 'text-green-400'; // string
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'text-yellow-400'; // boolean
+        } else if (/null/.test(match)) {
+            cls = 'text-slate-500'; // null
+        } else {
+            cls = 'text-orange-400'; // number
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
 function setLoading(loading) {
     isLoading = loading;
+    const btnContent = searchBtn.innerHTML;
 
     if (loading) {
         searchBtn.disabled = true;
-        searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Consultando...';
+        searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> PROCESSANDO...';
         queryInput.disabled = true;
     } else {
         searchBtn.disabled = false;
-        searchBtn.innerHTML = '<i class="fas fa-search mr-2"></i> Consultar';
+        searchBtn.innerHTML = '<i class="fas fa-bolt mr-3"></i> PROCESSAR';
         queryInput.disabled = false;
     }
 }
 
-// Sistema de Toast
 function showToast(message, type = 'info') {
     clearTimeout(toastTimeout);
 
+    const toastEl = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+    const toastIcon = document.getElementById('toastIcon');
+    const iconContainer = document.getElementById('toastIconContainer');
+
     toastMessage.textContent = message;
 
-    // Configurar ícone e cor baseado no tipo
-    const iconMap = {
-        info: { icon: 'fa-info-circle', color: 'text-blue-500' },
-        success: { icon: 'fa-check-circle', color: 'text-green-500' },
-        warning: { icon: 'fa-exclamation-triangle', color: 'text-yellow-500' },
-        error: { icon: 'fa-times-circle', color: 'text-red-500' }
-    };
+    // Configurations
+    if (type === 'error' || type === 'warning') {
+        iconContainer.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-red-500/20 text-red-500';
+        toastIcon.className = type === 'error' ? 'fas fa-shield-alt' : 'fas fa-exclamation-triangle';
+    } else {
+        iconContainer.className = 'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-brand-500/20 text-brand-500';
+        toastIcon.className = 'fas fa-check';
+    }
 
-    const config = iconMap[type] || iconMap.info;
-    toastIcon.className = `fas ${config.icon} ${config.color} text-xl`;
+    toastEl.classList.remove('translate-y-24', 'opacity-0');
 
-    // Mostrar toast
-    toastEl.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
-
-    // Esconder após 4 segundos
-    toastTimeout = setTimeout(hideToast, 4000);
+    toastTimeout = setTimeout(() => {
+        toastEl.classList.add('translate-y-24', 'opacity-0');
+    }, 4000);
 }
 
-function hideToast() {
-    toastEl.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-}
-
-// Modal Sobre
-function showAboutModal() {
-    document.getElementById('aboutModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeAboutModal() {
-    document.getElementById('aboutModal').classList.add('hidden');
-    document.body.style.overflow = '';
-}
-
-// Iniciar quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', init);

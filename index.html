@@ -1,143 +1,267 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Brasil Pro - Consultas</title>
-    <!-- Meta tags para compartilhamento -->
-    <meta property="og:title" content="API Brasil Pro - Consultas">
-    <meta property="og:description" content="Interface para consulta de dados públicos.">
-    <meta property="og:type" content="website">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>API Brasil Pro - Consultas Avançadas</title>
+    <!-- Meta tags -->
+    <meta property="og:title" content="API Brasil Pro - Premium">
+    <meta property="og:description" content="Plataforma avançada para consultas de dados.">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS JIT -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                            glow: '#0ea5e980'
+                        },
+                        darkbase: '#0B0F19',
+                        darkcard: 'rgba(21, 27, 43, 0.7)',
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-50 font-sans antialiased">
 
-    <!-- Container Principal -->
-    <div class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-blue-600 text-white p-2 rounded-lg">
-                        <i class="fas fa-cloud-upload-alt text-xl"></i>
+<body
+    class="bg-darkbase text-slate-200 font-sans antialiased min-h-screen relative overflow-x-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Background Animated Blobs -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div
+            class="absolute top-0 -left-4 w-96 h-96 bg-brand-600 rounded-full mix-blend-screen filter blur-[128px] opacity-20 animate-blob">
+        </div>
+        <div
+            class="absolute top-0 -right-4 w-96 h-96 bg-purple-600 rounded-full mix-blend-screen filter blur-[128px] opacity-20 animate-blob animation-delay-2000">
+        </div>
+        <div
+            class="absolute -bottom-32 left-1/2 w-96 h-96 bg-blue-600 rounded-full mix-blend-screen filter blur-[128px] opacity-20 animate-blob animation-delay-4000">
+        </div>
+    </div>
+
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <!-- Modern Header -->
+        <header
+            class="border-b border-white/5 bg-darkcard backdrop-blur-xl sticky top-0 z-40 supports-[backdrop-filter]:bg-darkbase/60">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="relative group">
+                        <div
+                            class="absolute -inset-1 bg-gradient-to-r from-brand-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-500">
+                        </div>
+                        <div
+                            class="relative bg-darkbase ring-1 ring-white/10 p-2.5 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-satellite-dish text-brand-500 text-xl"></i>
+                        </div>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">API Brasil Pro</h1>
-                        <p class="text-sm text-gray-500 hidden sm:block">Interface de consultas</p>
+                        <h1
+                            class="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 tracking-tight">
+                            API BRASIL PRO</h1>
+                        <p class="text-xs text-brand-500 font-medium tracking-wider uppercase">Portal de Consultas</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <div class="hidden md:flex items-center text-sm text-gray-600">
-                        <i class="fas fa-code-branch mr-1"></i>
-                        <span>v1.1.0</span>
+                <div class="flex items-center space-x-6">
+                    <div
+                        class="hidden sm:flex items-center px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold tracking-widest">
+                        v2.0.0
                     </div>
-                    <a href="#" onclick="showAboutModal(); return false;" class="text-gray-500 hover:text-gray-700">
-                        <i class="fas fa-info-circle text-xl"></i>
-                    </a>
                 </div>
             </div>
         </header>
 
-        <!-- Conteúdo Principal -->
-        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Seletor de API (Cards) -->
-            <div class="mb-8">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Selecione o tipo de consulta:</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3" id="apiSelector">
-                    <!-- Os cards serão injetados via JavaScript -->
-                </div>
-            </div>
+        <!-- Main Content -->
+        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-8">
 
-            <!-- Área de Consulta -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                <div class="flex flex-col sm:flex-row sm:items-end gap-4">
-                    <div class="flex-grow">
-                        <label for="queryInput" class="block text-sm font-medium text-gray-700 mb-1" id="inputLabel">Parâmetro de busca</label>
-                        <div class="relative rounded-md shadow-sm">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-gray-400"></i>
+            <!-- Intro / API Selector -->
+            <section class="animate-fade-in">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-white tracking-tight">Escolha o serviço</h2>
+                        <p class="text-slate-400 text-sm mt-1">Selecione uma das APIs disponíveis para iniciar a
+                            consulta inteligente.</p>
+                    </div>
+                </div>
+                <!-- Grids vazias para injeção via JS -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4" id="apiSelector"></div>
+            </section>
+
+            <!-- Search Area -->
+            <section class="opacity-0 animate-slide-up" style="animation-delay: 100ms;">
+                <div class="relative group rounded-2xl">
+                    <div
+                        class="absolute -inset-0.5 bg-gradient-to-r from-brand-600 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500">
+                    </div>
+                    <div
+                        class="relative bg-darkcard backdrop-blur-xl rounded-2xl border border-white/10 p-6 sm:p-8 shadow-2xl">
+
+                        <div class="flex flex-col lg:flex-row lg:items-end gap-6">
+                            <div class="flex-grow">
+                                <label for="queryInput"
+                                    class="flex items-center text-sm font-semibold text-slate-300 mb-2 uppercase tracking-wider"
+                                    id="inputLabel">
+                                    <i class="fas fa-fingerprint mr-2 text-brand-500"></i> Parâmetro
+                                </label>
+                                <div class="relative flex items-center">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i class="fas fa-search text-slate-500 text-lg"></i>
+                                    </div>
+                                    <input type="text" id="queryInput"
+                                        class="w-full bg-darkbase/50 border border-white/10 text-white placeholder-slate-600 text-lg rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent block pl-12 pr-12 py-4 transition-all duration-300"
+                                        placeholder="Digite aqui..." autocomplete="off">
+                                    <button type="button" id="clearInputBtn"
+                                        class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-white transition-colors"
+                                        style="display: none;">
+                                        <i class="fas fa-times-circle text-xl"></i>
+                                    </button>
+                                </div>
+                                <p class="mt-3 text-xs text-brand-400/80 font-medium tracking-wide" id="apiHint">
+                                    Aguardando seleção...</p>
                             </div>
-                            <input type="text" name="query" id="queryInput" class="block w-full pl-10 pr-20 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Digite o valor para consulta" autocomplete="off">
-                            <div class="absolute inset-y-0 right-0 flex items-center">
-                                <button type="button" id="clearInputBtn" class="h-full px-3 text-gray-400 hover:text-gray-600" onclick="clearInput()" style="display: none;">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
+
+                            <button type="button" id="searchBtn"
+                                class="h-16 lg:w-48 px-8 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-lg shadow-[0_0_20px_rgba(2,132,199,0.4)] hover:shadow-[0_0_30px_rgba(14,165,233,0.6)] flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1 active:translate-y-0">
+                                <i class="fas fa-bolt mr-3"></i> PROCESSAR
+                            </button>
                         </div>
-                    </div>
-                    <button type="button" id="searchBtn" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-search mr-2"></i>
-                        Consultar
-                    </button>
-                </div>
-                <p class="mt-2 text-xs text-gray-500" id="apiHint">Selecione uma API para ver a dica de parâmetro.</p>
-            </div>
 
-            <!-- Área de Resultados -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                    <h3 class="text-lg font-medium text-gray-900">Resultado da Consulta</h3>
-                    <span id="resultCount" class="text-sm text-gray-500"></span>
-                </div>
-                <div id="resultContainer" class="p-6">
-                    <div class="text-center py-12 text-gray-400">
-                        <i class="fas fa-database text-5xl mb-4"></i>
-                        <p class="text-lg">Nenhuma consulta realizada.</p>
-                        <p class="text-sm">Selecione uma API e faça uma busca.</p>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- Results Dashboard -->
+            <section class="flex-grow flex flex-col opacity-0 animate-slide-up" style="animation-delay: 200ms;"
+                id="resultsSection">
+                <div class="flex items-center justify-between mb-4 px-2">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <i class="fas fa-chart-network mr-2 text-purple-500"></i> Resultados
+                    </h3>
+                    <span id="resultCount"
+                        class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs font-medium text-slate-300 hidden"></span>
+                </div>
+
+                <div class="bg-darkcard backdrop-blur-xl rounded-2xl border border-white/5 p-2 sm:p-6 min-h-[400px] flex-grow shadow-2xl relative overflow-hidden"
+                    id="resultCardArea">
+                    <!-- Placeholder State -->
+                    <div id="resultPlaceholder"
+                        class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                        <div
+                            class="w-24 h-24 mb-6 rounded-full bg-gradient-to-br from-brand-900/40 to-purple-900/40 flex items-center justify-center ring-1 ring-white/5 shadow-inner">
+                            <i
+                                class="fas fa-radar text-4xl text-brand-500 opacity-80 animate-[spin_4s_linear_infinite]"></i>
+                        </div>
+                        <h4 class="text-xl font-bold text-slate-200 mb-2">Sistema Pronto</h4>
+                        <p class="text-slate-500 max-w-sm">Insira o parâmetro acima para iniciar a varredura e extração
+                            de dados no datalake.</p>
+                    </div>
+
+                    <!-- Grid for Items (Injected via JS) -->
+                    <div id="resultGrid"
+                        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 hidden relative z-10"></div>
+                </div>
+            </section>
         </main>
 
         <!-- Footer -->
-        <footer class="bg-white border-t border-gray-200 mt-auto">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <p class="text-center text-sm text-gray-500">
-                    &copy; 2026 API Brasil Pro. Interface desenvolvida para consultas.
+        <footer class="border-t border-white/5 py-6 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <p class="text-xs text-slate-600 font-medium">
+                    &copy; 2026 API Brasil Pro. Sistema de inteligência. <i
+                        class="fas fa-shield-check text-green-500 ml-1"></i> Seguro e Encriptado.
                 </p>
             </div>
         </footer>
     </div>
 
-    <!-- Modal "Sobre" -->
-    <div id="aboutModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-300" onclick="if(event.target === this) closeAboutModal()">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 transform transition-all">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-semibold text-gray-900">Sobre</h3>
-                <button onclick="closeAboutModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
+    <!-- Modal de Resultados Completos -->
+    <div id="fullDataModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-darkbase/90 backdrop-blur-md opacity-0 transition-opacity duration-300"
+            id="modalBackdrop"></div>
+
+        <div class="absolute right-0 top-0 bottom-0 w-full md:w-3/4 max-w-3xl bg-[#0f1523] border-l border-white/10 shadow-2xl transform translate-x-full transition-transform duration-300 ease-out flex flex-col"
+            id="modalDrawer">
+            <!-- Modal Header -->
+            <div
+                class="px-6 py-5 border-b border-white/5 flex items-center justify-between bg-darkbase/50 sticky top-0 z-10">
+                <div class="flex items-center gap-4">
+                    <div class="p-2 bg-brand-500/10 rounded-lg text-brand-400">
+                        <i class="fas fa-file-contract text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white tracking-tight" id="modalTitle">Dossiê Completo</h2>
+                        <p class="text-xs text-brand-500 uppercase tracking-wider font-semibold" id="modalSubtitle">ID:
+                            ...</p>
+                    </div>
+                </div>
+                <button id="closeModalBtn"
+                    class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-lg"></i>
                 </button>
             </div>
-            <div class="space-y-3 text-gray-600">
-                <p><i class="fas fa-code text-blue-600 w-6"></i> <strong>API Brasil Pro</strong> - Interface de consultas</p>
-                <p><i class="fas fa-user text-blue-600 w-6"></i> Desenvolvido para consumo das APIs disponíveis.</p>
-                <p><i class="fas fa-link text-blue-600 w-6"></i> Endpoint Base: <code class="bg-gray-100 px-2 py-1 rounded">http://apisbrasilpro.site/api/</code></p>
-                <p><i class="fas fa-shield-alt text-blue-600 w-6"></i> Dados retornados são de fontes públicas.</p>
-            </div>
-            <div class="mt-6">
-                <button onclick="closeAboutModal()" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Fechar</button>
+
+            <!-- Modal Body (JSON or Formatted Tree) -->
+            <div class="p-6 overflow-y-auto flex-grow stylish-scrollbar">
+                <div class="bg-[#0b0f19] border border-white/5 rounded-xl p-5 shadow-inner">
+                    <pre><code id="modalContent" class="text-sm font-mono text-emerald-400 whitespace-pre-wrap break-words"></code></pre>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast de Notificação -->
-    <div id="toast" class="fixed bottom-4 right-4 max-w-sm w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4 transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none z-50">
-        <div class="flex items-start">
-            <div class="flex-shrink-0">
-                <i id="toastIcon" class="fas fa-info-circle text-blue-500 text-xl"></i>
-            </div>
-            <div class="ml-3 w-0 flex-1">
-                <p id="toastMessage" class="text-sm font-medium text-gray-900">Mensagem</p>
-            </div>
-            <div class="ml-4 flex-shrink-0 flex">
-                <button onclick="hideToast()" class="text-gray-400 hover:text-gray-500">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 max-w-md w-full bg-[#1e293b] rounded-xl shadow-2xl border border-white/10 p-4 transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-4">
+        <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" id="toastIconContainer">
+            <i id="toastIcon" class="fas fa-info text-white"></i>
+        </div>
+        <div class="flex-1">
+            <p id="toastMessage" class="text-sm font-medium text-slate-200"></p>
         </div>
     </div>
 
     <script src="app.js"></script>
 </body>
+
 </html>
